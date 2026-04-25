@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { background:#0a0f1f; color:white; font-family:sans-serif; }
+
+        table { width:100%; margin-top:20px; }
+        th, td { padding:10px; text-align:center; }
+
+        .blink { animation: blink 1s infinite; }
+        @keyframes blink {
+            0%{color:red;} 50%{color:white;} 100%{color:red;}
+        }
+        @media (max-width: 600px) {
+    table {
+        font-size: 12px;
+    }
+
+    canvas {
+        width: 100% !important;
+    }
+
+    body {
+        padding: 10px;
+    }
+}
+    </style>
+</head>
+
+<body>
+
+<h2>📊 Dashboard</h2>
+
+<table border="1">
+<tr><th>CPU</th><th>Memory</th><th>Time</th></tr>
+
+{% for d in data %}
+<tr>
+<td>{{ d.cpu }}</td>
+<td class="{% if d.memory > 80 %}blink{% endif %}">{{ d.memory }}</td>
+<td>{{ d.time }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<h3>🚨 Alerts</h3>
+<ul>
+{% for a in alerts %}
+<li>{{ a.message }} - {{ a.time }}</li>
+{% endfor %}
+</ul>
+
+<canvas id="myChart"></canvas>
+
+<script>
+let chart;
+
+function loadChart(data) {
+    const ctx = document.getElementById('myChart').getContext('2d');
+
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.labels,
+            datasets: [
+                { label: 'CPU', data: data.cpu },
+                { label: 'Memory', data: data.memory }
+            ]
+        }
+    });
+}
+
+fetch("/data").then(res => res.json()).then(loadChart);
+
+setInterval(() => {
+    fetch("/data")
+    .then(res => res.json())
+    .then(data => {
+        chart.data.labels = data.labels;
+        chart.data.datasets[0].data = data.cpu;
+        chart.data.datasets[1].data = data.memory;
+        chart.update();
+    });
+}, 5000);
+</script>
+
+</body>
+</html>
