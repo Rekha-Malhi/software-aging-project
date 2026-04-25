@@ -1,21 +1,22 @@
 from flask import Flask, render_template, request, redirect, session, jsonify
 from db import collection, alerts_collection
+import os
 
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# 🔐 Dummy users (later MongoDB me bhi rakh sakti ho)
+# 🔐 Dummy users
 users = {
     "user@gmail.com": "1234",
     "admin@gmail.com": "admin"
 }
 
 # 🔐 LOGIN
-@app.route("/login", methods=["GET","POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
+        email = request.form.get("email")
+        password = request.form.get("password")
 
         if users.get(email) == password:
             session["user"] = email
@@ -49,11 +50,12 @@ def data_api():
     data.reverse()
 
     return jsonify({
-        "cpu": [d["cpu"] for d in data],
-        "memory": [d["memory"] for d in data],
-        "labels": [d["time"] for d in data]
+        "cpu": [d.get("cpu", 0) for d in data],
+        "memory": [d.get("memory", 0) for d in data],
+        "labels": [d.get("time", "") for d in data]
     })
 
-app.run(host="0.0.0.0", port=5000, debug=True)
-
+# 🚀 RUN (IMPORTANT FOR RAILWAY)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
